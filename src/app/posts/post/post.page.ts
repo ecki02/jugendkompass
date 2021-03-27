@@ -7,6 +7,8 @@ import { Platform, ActionSheetController, IonButton, IonIcon, IonBackButton } fr
 import { AppComponent } from 'src/app/app.component';
 import { Storage } from '@ionic/storage';
 import { Post } from 'src/app/utils/interfaces';
+import { Plugins } from '@capacitor/core';
+const { Browser, Share } = Plugins;
 @Component({
   selector: 'app-post',
   templateUrl: './post.page.html',
@@ -100,29 +102,50 @@ export class PostPage implements OnInit {
   }
 
   async openMenu() {
-    const actionButtons: any[] = [{
-      text: 'Artikel im Browser aufrufen',
-      handler: () => {
-        window.open(this.post.link, '_blank');
-      }
-    }];
+    const actionButtons: any[] = [
+      {
+        text: 'Artikel teilen',
+        handler: async () => {
+          if (this.platform.is("capacitor")) {
+            await Share.share({
+              title: 'Artikel teilen',
+              text: this.post.title.rendered,
+              url: this.post.link,
+              dialogTitle: 'Artikel teilen',
+            });
+          } else {
+            window.open(this.post.link, "_blank");
+          }
+        },
+      },
+      {
+        text: 'Artikel im Browser aufrufen',
+        handler: async () => {
+          await Browser.open({
+            url: this.post.link,
+          });
+        },
+      },
+    ];
 
     if (this.post.pdf) {
       actionButtons.push({
         text: 'Artikel als PDF anzeigen',
-        handler: () => {
-          window.open(this.post.pdf, '_blank');
-        }
+        handler: async () => {
+          await Browser.open({
+            url: this.post.pdf,
+          });
+        },
       });
     }
 
     actionButtons.push({
       role: 'destructive',
-      text: 'Abbrechen'
+      text: 'Abbrechen',
     });
 
     const sheet = await this.actionSheetController.create({
-      buttons: actionButtons
+      buttons: actionButtons,
     });
 
     await sheet.present();
